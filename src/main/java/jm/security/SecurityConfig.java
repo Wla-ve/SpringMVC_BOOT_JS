@@ -1,4 +1,4 @@
-package jm.security.example.security;
+package jm.security;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -14,7 +14,7 @@ import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 
 @Configuration
 @EnableWebSecurity
-@ComponentScan(basePackages = "jm.security.example.config")
+@ComponentScan(basePackages = "jm")
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     private final UserDetailsService userDetailsService; // сервис, с помощью которого тащим пользователя
@@ -34,10 +34,14 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         // http.csrf().disable(); - попробуйте выяснить сами, что это даёт
         http.authorizeRequests()
-                .antMatchers("/").permitAll() // доступность всем
-                .antMatchers("/user").access("hasAnyRole('ROLE_USER')") // разрешаем входить на /user пользователям с ролью User
+                .antMatchers("/login").permitAll() // доступность всем
+                .antMatchers("/admin/**").access("hasAnyRole('ROLE_ADMIN')")
+                .antMatchers("/user/**").access("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
+                .antMatchers("/**").authenticated()
                 .and().formLogin()  // Spring сам подставит свою логин форму
-                .successHandler(successUserHandler); // подключаем наш SuccessHandler для перенеправления по ролям
+                .successHandler(successUserHandler); // подключаем наш SuccessHandler для перенаправления по ролям
+        http.logout()
+                .logoutSuccessUrl("/");
     }
 
     // Необходимо для шифрования паролей
