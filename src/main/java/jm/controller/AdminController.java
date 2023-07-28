@@ -4,62 +4,57 @@ import jm.model.Role;
 import jm.model.User;
 import jm.service.RoleService;
 import jm.service.UserService;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.ModelMap;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
-import java.util.HashSet;
-import java.util.Set;
-
-@Controller
+@RestController
 @RequestMapping("/admin")
 public class AdminController {
     private final UserService userService;
     private final RoleService roleService;
-    public AdminController(UserService userService,RoleService roleService){
-        this.userService=userService;
-        this.roleService=roleService;
+
+    public AdminController(UserService userService, RoleService roleService) {
+        this.userService = userService;
+        this.roleService = roleService;
 
     }
-    @GetMapping
-    public String getAll(@AuthenticationPrincipal User user, ModelMap model){
-        model.addAttribute("user",user);
-        model.addAttribute("allRoles",roleService.findAll());
-        model.addAttribute("allUsers",userService.findAll());
-        return "admin-page";
+
+    @GetMapping("/allUsers")
+    public ResponseEntity<List<User>> allUsers() {
+        List<User> users = userService.findAll();
+        return new ResponseEntity<>(users, HttpStatus.OK);
     }
-    @GetMapping("/new")
-    public String newUser(ModelMap model){
-        model.addAttribute("user",new User());
-        model.addAttribute("roles",roleService.findAll());
-        return "new";
-    }
-    @PostMapping("/add-user")
-    public String addUser(@ModelAttribute User user, @RequestParam(value = "checkBoxRoles") String[] checkBoxRoles) {
-        Set<Role> roleSet = new HashSet<>();
-        for (String role : checkBoxRoles) {
-            roleSet.add(roleService.findByName(role));
-        }
-        user.setRoles(roleSet);
+
+    @PostMapping
+    public ResponseEntity<User> saveUser(@RequestBody User user) {
+        ;
         userService.save(user);
-        return "redirect:/admin";
-    }
-    @PostMapping("/edit/{id}")
-    public String editUser(@ModelAttribute User user, @RequestParam(value = "checkBoxRoles") String[] checkBoxRoles) {
-        Set<Role> roleSet = new HashSet<>();
-        for (String roles : checkBoxRoles) {
-            roleSet.add(roleService.findByName(roles));
-        }
-        user.setRoles(roleSet);
-        userService.update(user);
-        return "redirect:/admin";
+        return new ResponseEntity<>(user, HttpStatus.OK);
     }
 
-    @PostMapping("/{id}/delete")
-    public String removeUser(@PathVariable("id") long id) {
-        System.out.println(id);
+    @GetMapping("/authorities")
+    public ResponseEntity<List<Role>> getAllRoles() {
+        List<Role> roles = roleService.findAll();
+        return new ResponseEntity<>(roles, HttpStatus.OK);
+    }
+
+    @PutMapping()
+    public ResponseEntity<User> updateUser(@RequestBody User user) {
+        userService.update(user);
+        return new ResponseEntity<>(user, HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<User> deleteUser(@PathVariable long id) {
         userService.deleteById(id);
-        return "redirect:/admin";
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<User> getByUserId(@PathVariable long id) {
+        User user = userService.findById(id);
+        return new ResponseEntity<>(user, HttpStatus.OK);
     }
 }
